@@ -278,6 +278,28 @@ header {
     font-weight: 900;
 }
 
+/* Эксклюзивные товары: текст полностью помещается внутри карточки */
+.wholesale-note {
+    display: block;
+    margin-top: 4px;
+    color: #a79db8;
+    font-size: 11px;
+    font-weight: 700;
+    line-height: 1.25;
+}
+
+.exclusive-price {
+    flex: 1 1 auto;
+    min-width: 0;
+    max-width: 100%;
+    white-space: normal;
+    overflow-wrap: break-word;
+    word-break: normal;
+    line-height: 1.25;
+    font-size: 15px;
+    font-weight: 900;
+}
+
 /* ================= ADD BUTTON ================= */
 
 .add {
@@ -2008,56 +2030,68 @@ const products = [
     {
         id: "GRAPE NEBULA",
         name: "GRAPE NEBULA",
-        price: 12,
+        retailPrice: 60,
+        wholesalePrice: 40,
+        wholesaleMinQty: 10,
         image: "https://static.tildacdn.com/tild3337-3639-4533-a333-646337376333/image.png"
     },
 
     {
         id: "COTTON DREAM",
         name: "COTTON DREAM",
-        price: 11,
+        retailPrice: 60,
+        wholesalePrice: 40,
+        wholesaleMinQty: 10,
         image: "https://static.tildacdn.com/tild3363-3431-4436-b337-336239393834/_2026-09-14_21461128.png"
     },
 
     {
         id: "MINT CIRCUIT",
         name: "MINT CIRCUIT",
-        price: 11,
+        retailPrice: 60,
+        wholesalePrice: 40,
+        wholesaleMinQty: 10,
         image: "https://static.tildacdn.com/tild6565-6564-4531-a239-663762333436/_2026-09-14_21465483.png"
     },
 
     {
         id: "OCEAN BREEZE",
         name: "OCEAN BREEZE",
-        price: 20,
+        price: "Эксклюзив, только в сети Burger Shot",
         image: "https://static.tildacdn.com/tild3631-3430-4731-a461-386266333561/_2026-09-14_21471482.png"
     },
 
     {
         id: "MINT MOON",
         name: "MINT MOON",
-        price: 25,
+        retailPrice: 60,
+        wholesalePrice: 40,
+        wholesaleMinQty: 10,
         image: "https://static.tildacdn.com/tild3361-6266-4534-a431-616561323937/_2026-09-14_21470387.png"
     },
 
     {
         id: "KIWI METEOR",
         name: "KIWI METEOR",
-        price: 15,
+        retailPrice: 60,
+        wholesalePrice: 40,
+        wholesaleMinQty: 10,
         image: "https://static.tildacdn.com/tild3965-3331-4233-b738-613166353434/_2026-09-14_21463419.png"
     },
 
     {
         id: "LEMON CHAOS",
         name: "LEMON CHAOS",
-        price: 15,
+        retailPrice: 60,
+        wholesalePrice: 40,
+        wholesaleMinQty: 10,
         image: "https://static.tildacdn.com/tild6637-6362-4632-b938-306564656639/_2026-09-14_21464487.png"
     },
 
     {
         id: "STRAWBERRY BUNNY",
         name: "STRAWBERRY BUNNY",
-        price: 15,
+        price: "Эксклюзив, только в сети Burger Shot",
         image: "https://static.tildacdn.com/tild3532-3036-4563-b838-393862366266/_2026-09-14_21472340.png"
     }
 
@@ -2122,6 +2156,39 @@ function getQuantity(id) {
 
 
 /* =====================================================
+   ЦЕНА — РОЗНИЦА / ОПТ
+===================================================== */
+
+function getUnitPrice(product, quantity) {
+    if (!product) {
+        return 0;
+    }
+
+    const qty = Number(quantity) || 0;
+
+    if (
+        Number.isFinite(Number(product.wholesalePrice)) &&
+        Number.isFinite(Number(product.wholesaleMinQty)) &&
+        qty >= Number(product.wholesaleMinQty)
+    ) {
+        return Number(product.wholesalePrice);
+    }
+
+    return Number(product.retailPrice ?? product.price ?? 0);
+}
+
+function syncCartPrices() {
+    cart.forEach(item => {
+        const product = findProduct(item.id);
+
+        if (product) {
+            item.price = getUnitPrice(product, item.quantity);
+        }
+    });
+}
+
+
+/* =====================================================
    ДОБАВИТЬ ТОВАР
 ===================================================== */
 
@@ -2155,7 +2222,7 @@ function addToCart(id) {
 
             name: product.name,
 
-            price: product.price,
+            price: getUnitPrice(product, 1),
 
             image: product.image,
 
@@ -2278,7 +2345,7 @@ function setProductQuantity(
 
             name: product.name,
 
-            price: product.price,
+            price: getUnitPrice(product, 1),
 
             image: product.image,
 
@@ -2455,31 +2522,83 @@ function renderProducts() {
                     <div class="bottom">
 
 
-                        <div class="price">
-                            ${product.price} $
+                        <div class="price ${product.id === "STRAWBERRY BUNNY" || product.id === "OCEAN BREEZE" ? "exclusive-price" : ""}">
+                            ${
+                                product.id === "STRAWBERRY BUNNY" || product.id === "OCEAN BREEZE"
+                                ? product.price
+                                : `${getUnitPrice(product, quantity)} $<span class="wholesale-note">Опт от ${product.wholesaleMinQty} шт. — ${product.wholesalePrice} $/шт.</span>`
+                            }
                         </div>
 
 
                         <!-- КНОПКА -->
 
-                        <button
-                            class="add"
-                            id="add-${product.id}"
-                            style="
-                                display:
-                                ${quantity > 0
-                                    ? "none"
-                                    : "block"}
-                            "
-                            onclick="
-                                addToCart(
-                                    '${product.id}'
-                                )
-                            ">
+                        ${
 
-                            + Добавить
 
-                        </button>
+                            (product.id === "STRAWBERRY BUNNY" || product.id === "OCEAN BREEZE")
+
+
+                            ? ""
+
+
+                            : `
+
+
+                                <button
+
+
+                                    class="add"
+
+
+                                    id="add-${product.id}"
+
+
+                                    style="
+
+
+                                        display:
+
+
+                                        ${quantity > 0
+
+
+                                            ? "none"
+
+
+                                            : "block"}
+
+
+                                    "
+
+
+                                    onclick="
+
+
+                                        addToCart(
+
+
+                                            '${product.id}'
+
+
+                                        )
+
+
+                                    ">
+
+
+
+                                    + Добавить
+
+
+
+                                </button>
+
+
+                            `
+
+
+                        }
 
 
                         <!-- СЧЁТЧИК -->
@@ -2893,6 +3012,8 @@ function updateTotal() {
 
 function updateEverything() {
 
+    syncCartPrices();
+
     renderProducts();
 
     renderCart();
@@ -3045,6 +3166,8 @@ async function submitOrder() {
         alert("Корзина пустая.");
         return;
     }
+
+    syncCartPrices();
 
     const total =
         cart.reduce(
