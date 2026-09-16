@@ -3199,11 +3199,17 @@ async function submitOrder() {
     const webhookURL =
         "https://discord.com/api/webhooks/1547760633636724766/mXMgctfHzW8NbGXVmx3OkZuWNahij6KgI1F69hifqsfjuVLlx5iho7RTd8bR4NfgqCLp";
 
+    // ================= НОМЕР ЗАКАЗА =================
+    let orderNumber = Number(localStorage.getItem("svboost_order_number") || 0) + 1;
+    localStorage.setItem("svboost_order_number", orderNumber);
+
+    const formattedOrderNumber = String(orderNumber).padStart(4, "0");
+
     const discordMessage = {
         username: "Заявки с сайта",
         embeds: [
             {
-                title: "🛒 НОВАЯ ЗАЯВКА",
+                title: `🛒 НОВАЯ ЗАЯВКА №${formattedOrderNumber}`,
                 fields: [
                     {
                         name: "👤 Заказчик",
